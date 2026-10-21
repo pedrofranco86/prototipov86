@@ -14,8 +14,18 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      # The Android SDK is preinstalled on GitHub's ubuntu runners
+      # (android-actions/setup-android@v3 failed here, so it was removed).
+      # Just make sure the platform/build-tools this project needs exist.
+      - name: Install Android SDK packages
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          # AGP 8.7.3 is incompatible with Gradle 9.x; pin to 8.9
+          gradle-version: '8.9'
       - name: Build debug APK
         run: gradle assembleDebug
       - name: Publish APK as GitHub Release asset
